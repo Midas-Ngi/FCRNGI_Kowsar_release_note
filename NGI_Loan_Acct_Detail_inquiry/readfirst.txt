@@ -1,0 +1,19 @@
+1. if "ngi-secret" not available, create it first. Follow the "Day-0-OCP-Action.txt" file
+
+2. update in global.properties:
+	1. "user-service.base-url" 
+	ex. user-service.base-url=<user-service>:8080/openapi/prod/fcr/ngi/v1/auth
+	here, replace <user-service> with current user-service name
+	
+	2. Configurations are here. you can enable or disable by changing value true/false
+		for example: global.authorization=<true> -- Need to change value to true/false
+
+3. Need to change in yml file:
+	1. environment: <prod> -- change "prd" to your environment.
+	2. context-path: /openapi/<prd> -- change "prd" to your environment.
+	3. change designation-name as per provided in log-service.
+	4. rest-base-url: http://<ngi-log>:8080/openapi/<prod> -- change <ngi-log> as per log-service name and <prod> to your environment.
+
+Note:*********
+A. Need to create sequence if not. (.\DBScripts\NGI\FCR_NGI_LNACCTINQ_AUDIT_SEQ.ORA)
+B. Insert data in BA_CHANNEL_SERVICE_RULE_MAP for which channel want to allow. (follow .\DBScripts\NCBS-HOST\Day0.sql)
