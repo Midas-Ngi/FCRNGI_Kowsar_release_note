@@ -1,0 +1,72 @@
+Create New POD:
+
+oc login --server="https://api.ocp-uat.corpuat.danamon.co.id:6443" --insecure-skip-tls-verify -u %username% -p %password%
+oc login --server="https://api.ocp-uat.corpuat.danamon.co.id:6443" --insecure-skip-tls-verify -u ngi-core -p P@ssw0rdP@ssw0rd  
+oc project ngisit
+oc new-build --name=udf-mnt --image-stream=openshift/redhat-openjdk18-openshift:1.1 --binary -n ngisit
+oc start-build udf-mnt --from-file="D:\OpenShift\FCRNGIUDFMntService\19-02-2025\FCRNGIUDFMntService-0.0.0.1.jar" --follow -n ngisit
+oc new-app udf-mnt -n ngisit --as-deployment-config
+oc create route edge udf-mnt --service=udf-mnt --port=8080 --hostname=udf-mnt-ngisit.dbankke.uat.danamon.co.id -n ngisit
+
+
+
+Create or replace Config Map:
+
+oc project ngisit
+oc delete cm udf-mnt-cm
+oc delete cm udf-mnt-commons-cm
+
+
+
+oc create configmap udf-mnt-cm --from-file="D:\OpenShift\FCRNGIUDFMntService\application-udf-mnt.yml"
+
+oc create configmap udf-mnt-commons-cm --from-file="D:\OpenShift\FCRNGIUDFMntService\global.properties" --from-file="D:\OpenShift\FCRNGIUDFMntService\logback-spring.xml" --from-file="D:\OpenShift\FCRNGIUDFMntService\pom.xml"
+
+
+
+oc set volume dc/udf-mnt --add --overwrite=true --name=config-volume --mount-path=/deployments/config -t configmap --configmap-name=udf-mnt-cm 
+oc set volume dc/udf-mnt --add --overwrite=true --name=commons-volume --mount-path=/deployments/global -t configmap --configmap-name=udf-mnt-commons-cm
+
+oc set env dc/udf-mnt TZ=Asia/Jakarta -n ngisit
+oc set env dc/udf-mnt JAVA_TOOL_OPTIONS="-Duser.home=/home/jboss -Duser.name=jboss -Duser.timezone=GMT+07:00 -Xms2048M -Xmx2048M -Djava.security.egd=file:///dev/urandom"
+oc set env dc/udf-mnt GC_MAX_METASPACE_SIZE=1024
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Deploye new pod version:
+
+
+oc login -u %username% -p %password% --server="%url%" --insecure-skip-tls-verify=true
+oc project ngisit
+oc patch bc/create-new-user -p "[{\"op\":\"replace\",\"path\":\"/spec/output/to/name\",\"value\":\"create-new-user:0.0.0.1\"}]" --type=json
+
+oc create imagestream create-new-user
+oc start-build create-new-user --from-file="/tmp/GL-Service/FCRNGIGLTxnService-0.0.0.1.jar" --follow
+
+oc patch dc/create-new-user  -p "[{\"op\":\"replace\",\"path\":\"/spec/template/spec/containers/0/image\",\"value\":\"docker-registry.default.svc:5000/ngisit/create-new-user:0.0.0.1\"}]" --type=json
+oc tag --alias=true create-new-user:0.0.0.1 create-new-user:latest
+
+
+

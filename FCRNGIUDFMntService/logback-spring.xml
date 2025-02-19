@@ -1,0 +1,68 @@
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/base.xml"/>
+    <springProfile name="your-profile-name">
+        <property name="HOME_DIR" value="logs"/>
+        <property resource="application.properties"/>
+        <property name="APP_NAME" value="${app.name}"/>
+        <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+                <layout class="com.oracle.fcr.ngi.util.MaskingPatternLayout">
+                    <maskPattern>acctId\s*=(.*?)\,</maskPattern> <!-- this patter used for acciId=00000000, format only. N.B: comma is required -->
+                    <!--<maskPattern>(\d+\.\d+\.\d+\.\d+)</maskPattern> &lt;!&ndash; Ip address IPv4 pattern &ndash;&gt;-->
+                    <!--<maskPattern>(\w+@\w+\.\w+)</maskPattern> &lt;!&ndash; Email pattern &ndash;&gt;-->
+                    <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [${spring.application.name:-},%X{traceId:-},%X{spanId:-}] [%t] %-5level %logger{36} - %msg%n</pattern>
+
+                </layout>
+            </encoder>
+        </appender>
+
+        <appender name="FILE-AUDIT"
+                  class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${HOME_DIR}/${APP_NAME}.log</file>
+            <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+                <layout class="com.oracle.fcr.ngi.util.MaskingPatternLayout">
+                    <maskPattern>acctId\s*=(.*?)\,</maskPattern>
+                    <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [${spring.application.name:-},%X{traceId:-},%X{spanId:-}] [%t] %-5level %logger{36} - %msg%n</pattern>
+                </layout>
+            </encoder>
+
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <!-- rollover daily -->
+                <fileNamePattern>${HOME_DIR}/archived/${APP_NAME}.%d{yyyy-MM-dd}.%i.log
+                </fileNamePattern>
+                <timeBasedFileNamingAndTriggeringPolicy
+                        class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                    <maxFileSize>10MB</maxFileSize>
+                </timeBasedFileNamingAndTriggeringPolicy>
+                <maxHistory>1</maxHistory> <!--keeping given days worth of history-->
+                <totalSizeCap>2GB</totalSizeCap>
+                <cleanHistoryOnStart>true</cleanHistoryOnStart>
+            </rollingPolicy>
+
+        </appender>
+
+		<!-- Send logs to both console and file audit -->
+		<logger name="com.oracle.fcr.ngi" level="trace"
+				additivity="false">
+			<appender-ref ref="FILE-AUDIT" />
+			<appender-ref ref="STDOUT" />
+		</logger>
+		<logger name="org.springframework" level="trace"
+				additivity="false">
+			<appender-ref ref="STDOUT" />
+		</logger>
+        <logger name="org.apache.tomcat.jdbc.pool" level="trace"
+                additivity="false">
+            <appender-ref ref="STDOUT" />
+        </logger>
+		<logger name="org.hibernate" level="trace"
+				additivity="false">
+			<appender-ref ref="STDOUT" />
+		</logger>
+
+		<root level="trace">
+			<appender-ref ref="FILE-AUDIT" />
+			<appender-ref ref="STDOUT" />
+		</root>
+	</springProfile>
+</configuration>
